@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Sensor Data</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <h1>Real-Time Sensor Data</h1>
+    <canvas id="temperatureChart"></canvas>
+    <canvas id="humidityChart"></canvas>
+
+    <script>
+        const temperatureCtx = document.getElementById('temperatureChart').getContext('2d');
+        const humidityCtx = document.getElementById('humidityChart').getContext('2d');
+
+        let temperatureChart = new Chart(temperatureCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Temperature (°C)',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        let humidityChart = new Chart(humidityCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Humidity (%)',
+                    data: [],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        const socket = io();
+
+        socket.on('initialData', (data) => {
+            updateCharts(data);
+        });
+
+        socket.on('updateData', (data) => {
+            updateCharts(data);
+        });
+
+       /*function updateCharts(data) {
+            console.log('data', data)
+            const labels = data.map(row => new Date(row.timestamp).toLocaleTimeString());
+            const temperatures = data.map(row => row.temperature);
+            const humidities = data.map(row => row.humidity);
+
+            temperatureChart.data.labels = labels;
+            temperatureChart.data.datasets[0].data = temperatures;
+            temperatureChart.update();
+
+            humidityChart.data.labels = labels;
+            humidityChart.data.datasets[0].data = humidities;
+            humidityChart.update();
+        }*/
+        function updateCharts(data) {
+            console.log('data', data);
+
+            // Mengurai data
+            const labels = data.map(row => new Date(row.timestamp).toLocaleTimeString());
+            const temperatures = data.map(row => {
+                const parsedData = JSON.parse(row.data);
+                return parsedData.temperature;
+            });
+            const humidities = data.map(row => {
+                const parsedData = JSON.parse(row.data);
+                return parsedData.humidity;
+            });
+
+            // Memperbarui grafik suhu
+            temperatureChart.data.labels = labels;
+            temperatureChart.data.datasets[0].data = temperatures;
+            temperatureChart.update();
+
+            // Memperbarui grafik kelembapan
+            humidityChart.data.labels = labels;
+            humidityChart.data.datasets[0].data = humidities;
+            humidityChart.update();
+        }
+    </script>
+</body>
+</html>
