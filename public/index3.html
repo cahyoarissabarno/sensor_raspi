@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Sensor Data</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="./output.css" rel="stylesheet">
+    <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+
+</head>
+<body>
+    <div class="md:p-4 p-2 bg-sky-50 text-center">
+        <!-- <h1 class="text-2xl font-bold mb-4">Real-Time Sensor Data</h1> -->
+        <h1 class="text-2xl font-bold text-gray-700 lg:text-4xl my-5">Real-Time Sensor Data</h1>
+        <div class="grid md:grid-cols-2 md:grid-rows-3 gap-5 grid-cols-1 grid-rows-6 py-5">
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor1"></canvas>
+            </div>
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor2"></canvas>
+            </div>
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor3"></canvas>
+            </div>
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor4"></canvas>
+            </div>
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor5"></canvas>
+            </div>
+            <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <canvas id="sensor6"></canvas>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Initialize the charts for each sensor
+        const sensor1Ctx = document.getElementById('sensor1').getContext('2d');
+        const sensor2Ctx = document.getElementById('sensor2').getContext('2d');
+        const sensor3Ctx = document.getElementById('sensor3').getContext('2d');
+        const sensor4Ctx = document.getElementById('sensor4').getContext('2d');
+        const sensor5Ctx = document.getElementById('sensor5').getContext('2d');
+        const sensor6Ctx = document.getElementById('sensor6').getContext('2d');
+
+        // Chart configurations
+        const chartConfig = (label, borderColor) => ({
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: label,
+                    data: [],
+                    borderColor: borderColor,
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        let sensor1Chart = new Chart(sensor1Ctx, chartConfig('Sensor 1', 'rgba(255, 99, 132, 1)'));
+        let sensor2Chart = new Chart(sensor2Ctx, chartConfig('Sensor 2', 'rgba(54, 162, 235, 1)'));
+        let sensor3Chart = new Chart(sensor3Ctx, chartConfig('Sensor 3', 'rgba(75, 192, 192, 1)'));
+        let sensor4Chart = new Chart(sensor4Ctx, chartConfig('Sensor 4', 'rgba(153, 102, 255, 1)'));
+        let sensor5Chart = new Chart(sensor5Ctx, chartConfig('Sensor 5', 'rgba(255, 206, 86, 1)'));
+        let sensor6Chart = new Chart(sensor6Ctx, chartConfig('Sensor 6', 'rgba(255, 159, 64, 1)'));
+
+        const socket = io();
+
+        socket.on('initialData', (data) => {
+            updateCharts(data);
+        });
+
+        socket.on('updateData', (data) => {
+            updateCharts(data);
+        });
+
+        function updateCharts(data) {
+            console.log('data', data);
+            const labels = data.map(row => new Date(row.timestamp).toLocaleTimeString());
+            
+            const temperatures = data.map(row => {
+                const parsedData = JSON.parse(row.data);
+                return parsedData.temperature;
+            });
+            const humidities = data.map(row => {
+                const parsedData = JSON.parse(row.data);
+                return parsedData.humidity;
+            });
+            
+            // const sensor1Data = data.map(row => row.sensor1);
+            // const sensor2Data = data.map(row => row.sensor2);
+            // const sensor3Data = data.map(row => row.sensor3);
+            // const sensor4Data = data.map(row => row.sensor4);
+            // const sensor5Data = data.map(row => row.sensor5);
+            // const sensor6Data = data.map(row => row.sensor6);
+
+            sensor1Chart.data.labels = labels;
+            sensor1Chart.data.datasets[0].data = temperatures;
+            sensor1Chart.update();
+
+            sensor2Chart.data.labels = labels;
+            sensor2Chart.data.datasets[0].data = humidities;
+            sensor2Chart.update();
+
+            sensor3Chart.data.labels = labels;
+            sensor3Chart.data.datasets[0].data = sensor3Data;
+            sensor3Chart.update();
+
+            sensor4Chart.data.labels = labels;
+            sensor4Chart.data.datasets[0].data = sensor4Data;
+            sensor4Chart.update();
+
+            sensor5Chart.data.labels = labels;
+            sensor5Chart.data.datasets[0].data = sensor5Data;
+            sensor5Chart.update();
+
+            sensor6Chart.data.labels = labels;
+            sensor6Chart.data.datasets[0].data = sensor6Data;
+            sensor6Chart.update();
+        }
+    </script>
+</body>
+</html>

@@ -18,6 +18,7 @@ const connection = mysql.createConnection({
 
 // Serve static files (frontend)
 app.use(express.static('public'));
+app.use('/node_modules', express.static('node_modules'));
 
 // Fetch data from MySQL
 function fetchData(callback) {

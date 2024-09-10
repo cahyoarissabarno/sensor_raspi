@@ -1,60 +1,47 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import serial
-import paho.mqtt.client as mqtt
 import mysql.connector
+import multiprocessing
 import time
-import daemon
 
-# UART configuration
-UART_PORT = '/dev/ttyS0'  # Update with your UART port
-UART_BAUDRATE = 115200        # Update with your baud rate
+app = Flask(__name__)
 
-# MQTT configuration
-MQTT_BROKER = "localhost"  # Update with your MQTT broker URL
-MQTT_PORT = 1883                 # Update with your MQTT broker port
-MQTT_TOPIC = "test/topic"        # Update with your MQTT topic
+CORS(app)
 
-# MySQL configuration
-MYSQL_HOST = "localhost"
-MYSQL_USER = "jovial"
-MYSQL_PASSWORD = "jovial"  # Update with your MySQL password
-MYSQL_DB = "sensor_data"
+# Serial port setup
+UART_PORT = '/dev/ttyUSB0'
+UART_BAUDRATE = 115200
 
-def uart_read():
-    """Read data from UART and return as string."""
-    with serial.Serial(UART_PORT, UART_BAUDRATE, timeout=1) as ser:
-        line = ser.readline().decode('utf-8').strip()
-        return line
+def send_serial_command(command):
+    command2 = command+"\n"
+    ser = serial.Serial(UART_PORT, UART_BAUDRATE)
+    ser.write(command2.encode())
+    print("data terkirim serial")
 
-def on_connect(client, userdata, flags, rc):
-    """MQTT callback for connection."""
-    if rc == 0:
-        print("Connected to MQTT Broker")
-        client.subscribe(MQTT_TOPIC)
-    else:
-        print(f"Failed to connect, return code {rc}")
-
-def on_message(client, userdata, msg):
-    """MQTT callback for message reception."""
-    payload = msg.payload.decode('utf-8')
-    print(f"Received `{payload}` from `{msg.topic}` topic")
-    store_data_in_db(payload)
-
-def mqtt_setup():
-    """Set up MQTT client and return."""
-    client = mqtt.Client()
-    client.on_connect = on_connect
-    client.on_message = on_message
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-    return client
+def read_serial_data():
+    with serial.Serial(UART_PORT, UART_BAUDRATE, timeout=3) as ser:
+        while True:
+            data = ser.readline().decode('utf-8').strip()
+            if data:
+                print(f"Received data: {data}")
+                if data.startswith("{") and data.endswith("}"):
+                    # Cek apakah string TIDAK mengandung ":nan"
+                    if ":nan" not in data:
+                        store_data_in_db(data)
+                    else:
+                        print("Data Have NaN, Not saved to db")
+                else:
+                    print("JSON Invalid, Not saved to db")
+            time.sleep(1)
 
 def store_data_in_db(data):
-    """Store sensor data in MySQL database."""
     try:
         conn = mysql.connector.connect(
-            host=MYSQL_HOST,
-            user=MYSQL_USER,
-            password=MYSQL_PASSWORD,
-            database=MYSQL_DB
+            host="localhost",
+            user="jovial",
+            password="jovial",
+            database="sensor_data"
         )
         cursor = conn.cursor()
         cursor.execute("INSERT INTO sensor_table (data) VALUES (%s)", (data,))
@@ -66,26 +53,23 @@ def store_data_in_db(data):
         cursor.close()
         conn.close()
 
-def run():
-    """Main function to read from UART and MQTT, and store data."""
-    client = mqtt_setup()
-    client.loop_start()
-    
-    while True:
-        uart_data = uart_read()
-        if uart_data:
-            print(f"UART Data: {uart_data}")
-            store_data_in_db(uart_data)
-        time.sleep(1)
+@app.route('/control', methods=['POST'])
+def control():
+    data = request.json
+    command = data.get('command')
+    if command:
+        send_serial_command(command)
+        print(command)
+        return jsonify({"status": "success"}), 200
+    return jsonify({"status": "error", "message": "No command provided"}), 400
 
-def daemonize():
-    """Daemonize the process using the python-daemon library."""
-    with daemon.DaemonContext():
-        run()
+def run_flask():
+    app.run(host='0.0.0.0', port=5000)
 
 if __name__ == "__main__":
-    # Uncomment the following line to run as daemon
-    # daemonize()
-    
-    # Comment the following line if using as a daemon
-    run()
+    # Start the serial reading in a separate process
+    serial_process = multiprocessing.Process(target=read_serial_data)
+    serial_process.start()
+
+    # Start Flask app
+    run_flask()

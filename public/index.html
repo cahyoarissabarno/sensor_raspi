@@ -4,14 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-Time Sensor Data</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="./output.css" rel="stylesheet">
+    <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+
 </head>
 <body>
     <div class="md:p-4 p-2 bg-sky-50 text-center">
-        <!-- <h1 class="text-2xl font-bold mb-4">Real-Time Sensor Data</h1> -->
         <h1 class="text-2xl font-bold text-gray-700 lg:text-4xl my-5">Real-Time Sensor Data</h1>
+        <div class="mt-6">
+            <button style="background-color: rgb(125 211 252); padding: 5px 10px;" id="startButton">Start</button>
+            <button style="	background-color: rgb(252 165 165); padding: 5px 10px;" id="stopButton">Stop</button>
+            <input type="number" style="margin-left: 20px;" id="tempInput" placeholder="Set Temperature">
+            <button style="background-color: rgb(134 239 172); padding: 5px 10px;" id="setTempButton">Set Temperature</button>
+        </div>
         <div class="grid md:grid-cols-2 md:grid-rows-3 gap-5 grid-cols-1 grid-rows-6 py-5">
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
                 <canvas id="sensor1"></canvas>
@@ -34,35 +40,6 @@
         </div>
     </div>
     <script>
-        // Initialize the charts for each sensor
-        const sensor1Ctx = document.getElementById('sensor1').getContext('2d');
-        const sensor2Ctx = document.getElementById('sensor2').getContext('2d');
-        const sensor3Ctx = document.getElementById('sensor3').getContext('2d');
-        const sensor4Ctx = document.getElementById('sensor4').getContext('2d');
-        const sensor5Ctx = document.getElementById('sensor5').getContext('2d');
-        const sensor6Ctx = document.getElementById('sensor6').getContext('2d');
-
-        // Chart configurations
-        const chartConfig = (label, borderColor) => ({
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [{
-                    label: label,
-                    data: [],
-                    borderColor: borderColor,
-                    borderWidth: 1
-                }]
-            }
-        });
-
-        let sensor1Chart = new Chart(sensor1Ctx, chartConfig('Sensor 1', 'rgba(255, 99, 132, 1)'));
-        let sensor2Chart = new Chart(sensor2Ctx, chartConfig('Sensor 2', 'rgba(54, 162, 235, 1)'));
-        let sensor3Chart = new Chart(sensor3Ctx, chartConfig('Sensor 3', 'rgba(75, 192, 192, 1)'));
-        let sensor4Chart = new Chart(sensor4Ctx, chartConfig('Sensor 4', 'rgba(153, 102, 255, 1)'));
-        let sensor5Chart = new Chart(sensor5Ctx, chartConfig('Sensor 5', 'rgba(255, 206, 86, 1)'));
-        let sensor6Chart = new Chart(sensor6Ctx, chartConfig('Sensor 6', 'rgba(255, 159, 64, 1)'));
-
         const socket = io();
 
         socket.on('initialData', (data) => {
@@ -75,48 +52,145 @@
 
         function updateCharts(data) {
             console.log('data', data);
-            const labels = data.map(row => new Date(row.timestamp).toLocaleTimeString());
-            
-            const temperatures = data.map(row => {
-                const parsedData = JSON.parse(row.data);
-                return parsedData.temperature;
+
+            const labels = [];
+            const sensor1Celsius = [], sensor1Fahrenheit = [];
+            const sensor2Celsius = [], sensor2Fahrenheit = [];
+            const sensor3Celsius = [], sensor3Fahrenheit = [];
+            const sensor4Celsius = [], sensor4Fahrenheit = [];
+            const sensor5Celsius = [], sensor5Fahrenheit = [];
+            const sensor6Celsius = [], sensor6Fahrenheit = [];
+
+            data.forEach(row => {
+                try {
+                    const parsedData = JSON.parse(row.data);
+
+                    if (
+                        parsedData.sensor1 && parsedData.sensor2 && parsedData.sensor3 &&
+                        parsedData.sensor4 && parsedData.sensor5 && parsedData.sensor6
+                    ) {
+                        labels.push(new Date(row.timestamp).toLocaleTimeString());
+                        sensor1Celsius.push(parsedData.sensor1.celcius);
+                        sensor1Fahrenheit.push(parsedData.sensor1.farenheit);
+                        sensor2Celsius.push(parsedData.sensor2.celcius);
+                        sensor2Fahrenheit.push(parsedData.sensor2.farenheit);
+                        sensor3Celsius.push(parsedData.sensor3.celcius);
+                        sensor3Fahrenheit.push(parsedData.sensor3.farenheit);
+                        sensor4Celsius.push(parsedData.sensor4.celcius);
+                        sensor4Fahrenheit.push(parsedData.sensor4.farenheit);
+                        sensor5Celsius.push(parsedData.sensor5.celcius);
+                        sensor5Fahrenheit.push(parsedData.sensor5.farenheit);
+                        sensor6Celsius.push(parsedData.sensor6.celcius);
+                        sensor6Fahrenheit.push(parsedData.sensor6.farenheit);
+                    }
+                } catch (error) {
+                    console.warn('Invalid JSON data, skipping entry:', row.data);
+                }
             });
-            const humidities = data.map(row => {
-                const parsedData = JSON.parse(row.data);
-                return parsedData.humidity;
-            });
-            
-            // const sensor1Data = data.map(row => row.sensor1);
-            // const sensor2Data = data.map(row => row.sensor2);
-            // const sensor3Data = data.map(row => row.sensor3);
-            // const sensor4Data = data.map(row => row.sensor4);
-            // const sensor5Data = data.map(row => row.sensor5);
-            // const sensor6Data = data.map(row => row.sensor6);
 
-            sensor1Chart.data.labels = labels;
-            sensor1Chart.data.datasets[0].data = temperatures;
-            sensor1Chart.update();
-
-            sensor2Chart.data.labels = labels;
-            sensor2Chart.data.datasets[0].data = humidities;
-            sensor2Chart.update();
-
-            sensor3Chart.data.labels = labels;
-            sensor3Chart.data.datasets[0].data = sensor3Data;
-            sensor3Chart.update();
-
-            sensor4Chart.data.labels = labels;
-            sensor4Chart.data.datasets[0].data = sensor4Data;
-            sensor4Chart.update();
-
-            sensor5Chart.data.labels = labels;
-            sensor5Chart.data.datasets[0].data = sensor5Data;
-            sensor5Chart.update();
-
-            sensor6Chart.data.labels = labels;
-            sensor6Chart.data.datasets[0].data = sensor6Data;
-            sensor6Chart.update();
+            updateChart(sensor1Chart, labels, sensor1Celsius, sensor1Fahrenheit);
+            updateChart(sensor2Chart, labels, sensor2Celsius, sensor2Fahrenheit);
+            updateChart(sensor3Chart, labels, sensor3Celsius, sensor3Fahrenheit);
+            updateChart(sensor4Chart, labels, sensor4Celsius, sensor4Fahrenheit);
+            updateChart(sensor5Chart, labels, sensor5Celsius, sensor5Fahrenheit);
+            updateChart(sensor6Chart, labels, sensor6Celsius, sensor6Fahrenheit);
         }
+
+        function updateChart(chart, labels, celsiusData, fahrenheitData) {
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = celsiusData;
+            chart.data.datasets[1].data = fahrenheitData;
+            chart.update();
+        }
+
+        const sensor1Ctx = document.getElementById('sensor1').getContext('2d');
+        const sensor2Ctx = document.getElementById('sensor2').getContext('2d');
+        const sensor3Ctx = document.getElementById('sensor3').getContext('2d');
+        const sensor4Ctx = document.getElementById('sensor4').getContext('2d');
+        const sensor5Ctx = document.getElementById('sensor5').getContext('2d');
+        const sensor6Ctx = document.getElementById('sensor6').getContext('2d');
+
+        const createChartConfig = (labelCelsius, labelFahrenheit, borderColorCelsius, borderColorFahrenheit) => ({
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: labelCelsius,
+                        data: [],
+                        borderColor: borderColorCelsius,
+                        borderWidth: 2 // Solid color for Celsius
+                    },
+                    {
+                        label: labelFahrenheit,
+                        data: [],
+                        borderColor: borderColorFahrenheit,
+                        borderWidth: 1, // Lighter shade for Fahrenheit
+                        borderDash: [5, 5] // Dashed line for Fahrenheit
+                    }
+                ]
+            }
+        });
+
+        let sensor1Chart = new Chart(sensor1Ctx, createChartConfig(
+            'Sensor 1 (Celsius)', 'Sensor 1 (Fahrenheit)',
+            'rgba(255, 99, 132, 1)', 'rgba(255, 99, 132, 0.5)'
+        ));
+        let sensor2Chart = new Chart(sensor2Ctx, createChartConfig(
+            'Sensor 2 (Celsius)', 'Sensor 2 (Fahrenheit)',
+            'rgba(54, 162, 235, 1)', 'rgba(54, 162, 235, 0.5)'
+        ));
+        let sensor3Chart = new Chart(sensor3Ctx, createChartConfig(
+            'Sensor 3 (Celsius)', 'Sensor 3 (Fahrenheit)',
+            'rgba(75, 192, 192, 1)', 'rgba(75, 192, 192, 0.5)'
+        ));
+        let sensor4Chart = new Chart(sensor4Ctx, createChartConfig(
+            'Sensor 4 (Celsius)', 'Sensor 4 (Fahrenheit)',
+            'rgba(153, 102, 255, 1)', 'rgba(153, 102, 255, 0.5)'
+        ));
+        let sensor5Chart = new Chart(sensor5Ctx, createChartConfig(
+            'Sensor 5 (Celsius)', 'Sensor 5 (Fahrenheit)',
+            'rgba(255, 206, 86, 1)', 'rgba(255, 206, 86, 0.5)'
+        ));
+        let sensor6Chart = new Chart(sensor6Ctx, createChartConfig(
+            'Sensor 6 (Celsius)', 'Sensor 6 (Fahrenheit)',
+            'rgba(255, 159, 64, 1)', 'rgba(255, 159, 64, 0.5)'
+        ));
+
+        function sendCommand(command) {
+            fetch('http://localhost:5000/control', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ command: command }),
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Event listener for the Start button
+        document.getElementById('startButton').addEventListener('click', () => {
+            // sendCommand('start\n');
+            sendCommand('start');
+        });
+
+        // Event listener for the Stop button
+        document.getElementById('stopButton').addEventListener('click', () => {
+            // sendCommand('stop');
+            sendCommand('stop');
+        });
+
+        // Event listener for the Set Temperature button
+        document.getElementById('setTempButton').addEventListener('click', () => {
+            const temp = document.getElementById('tempInput').value;
+            if (temp) {
+                sendCommand(`${temp}`);
+            }
+        });
     </script>
 </body>
 </html>

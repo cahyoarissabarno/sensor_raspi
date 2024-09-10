@@ -15,5 +15,8 @@
     "mysql": "^2.18.1",
     "pm2": "^5.4.2",
     "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.10"
   }
 }
