@@ -12,42 +12,53 @@
 <body>
     <div class="md:p-4 p-2 bg-sky-50 text-center">
         <h1 class="text-2xl font-bold text-gray-700 lg:text-4xl my-5">Real-Time Sensor Data</h1>
+        <p style="margin: 20px 0px;" class="text-2xl"  id="average"></p>
         <div class="mt-6">
             <button style="background-color: rgb(125 211 252); padding: 5px 10px;" id="startButton">Start</button>
             <button style="	background-color: rgb(252 165 165); padding: 5px 10px;" id="stopButton">Stop</button>
-            <input type="number" style="margin-left: 20px;" id="tempInput" placeholder="Set Temperature">
+            <input type="number" style="margin-left: 20px;" id="tempInput" placeholder="Set Temperature (°C)">
             <button style="background-color: rgb(134 239 172); padding: 5px 10px;" id="setTempButton">Set Temperature</button>
+            <button style="background-color: rgb(147 197 253); padding: 5px 10px;" id="fullscreen-btn">Go Fullscreen</button>
         </div>
         <div class="grid md:grid-cols-2 md:grid-rows-3 gap-5 grid-cols-1 grid-rows-6 py-5">
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor1now"></p>
                 <canvas id="sensor1"></canvas>
             </div>
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor2now"></p>
                 <canvas id="sensor2"></canvas>
             </div>
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor3now"></p>
                 <canvas id="sensor3"></canvas>
             </div>
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor4now"></p>
                 <canvas id="sensor4"></canvas>
             </div>
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor5now"></p>
                 <canvas id="sensor5"></canvas>
             </div>
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
+                <p id="sensor6now"></p>
                 <canvas id="sensor6"></canvas>
             </div>
         </div>
     </div>
     <script>
         const socket = io();
+        const fullscreenButton = document.getElementById('fullscreen-btn');
 
         socket.on('initialData', (data) => {
             updateCharts(data);
+            updateCurrentData(data);
         });
 
         socket.on('updateData', (data) => {
             updateCharts(data);
+            updateCurrentData(data);
         });
 
         function updateCharts(data) {
@@ -191,6 +202,69 @@
                 sendCommand(`${temp}`);
             }
         });
+
+        fullscreenButton.addEventListener('click', () => {
+            // Check if the document is already in fullscreen mode
+            if (!document.fullscreenElement) {
+                // Request fullscreen mode
+                document.documentElement.requestFullscreen();
+                fullscreenButton.textContent = 'Exit Fullscreen';
+            } else {
+                // Exit fullscreen mode
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    fullscreenButton.textContent = 'Go Fullscreen';
+                }
+            }
+        });
+
+        // Handle fullscreen change event to update button text when user exits fullscreen
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                fullscreenButton.textContent = 'Go Fullscreen';
+            }
+        });
+
+        function updateCurrentData(data) {
+            if (data.length > 0) {
+                const latestData = JSON.parse(data[data.length - 1].data);
+
+                if (latestData.sensor1) {
+                    document.getElementById('sensor1now').textContent =
+                        `Sensor 1: ${latestData.sensor1.celcius}°C / ${latestData.sensor1.farenheit}°F`;
+                }
+
+                if (latestData.sensor2) {
+                    document.getElementById('sensor2now').textContent =
+                        `Sensor 2: ${latestData.sensor2.celcius}°C / ${latestData.sensor2.farenheit}°F`;
+                }
+
+                if (latestData.sensor3) {
+                    document.getElementById('sensor3now').textContent =
+                        `Sensor 3: ${latestData.sensor3.celcius}°C / ${latestData.sensor3.farenheit}°F`;
+                }
+
+                if (latestData.sensor4) {
+                    document.getElementById('sensor4now').textContent =
+                        `Sensor 4: ${latestData.sensor4.celcius}°C / ${latestData.sensor4.farenheit}°F`;
+                }
+
+                if (latestData.sensor5) {
+                    document.getElementById('sensor5now').textContent =
+                        `Sensor 5: ${latestData.sensor5.celcius}°C / ${latestData.sensor5.farenheit}°F`;
+                }
+
+                if (latestData.sensor6) {
+                    document.getElementById('sensor6now').textContent =
+                        `Sensor 6: ${latestData.sensor6.celcius}°C / ${latestData.sensor6.farenheit}°F`;
+                }
+
+                let averageCel = (latestData.sensor1.celcius + latestData.sensor2.celcius + latestData.sensor3.celcius + latestData.sensor4.celcius + latestData.sensor5.celcius + latestData.sensor6.celcius)/6
+                let averageFar = (latestData.sensor1.farenheit + latestData.sensor2.farenheit + latestData.sensor3.farenheit + latestData.sensor4.farenheit + latestData.sensor5.farenheit + latestData.sensor6.farenheit)/6
+                document.getElementById('average').textContent =
+                        `Average: ${averageCel.toFixed(2)}°C / ${averageFar.toFixed(2)}°F`;
+            }
+        }
     </script>
 </body>
 </html>
