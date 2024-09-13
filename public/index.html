@@ -8,6 +8,51 @@
     <link href="./output.css" rel="stylesheet">
     <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
 
+    <style>
+        /* Gaya untuk modal */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            padding-top: 10px; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            height: 98%;
+            background-color: white;
+        }
+
+        /* Gaya untuk tombol close */
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Gaya untuk iframe */
+        iframe {
+            width: 100%;
+            height: 90%;
+            border: none;
+        }
+    </style>
 </head>
 <body>
     <div class="md:p-4 p-2 bg-sky-50 text-center">
@@ -19,6 +64,18 @@
             <input type="number" style="margin-left: 20px;" id="tempInput" placeholder="Set Temperature (°C)">
             <button style="background-color: rgb(134 239 172); padding: 5px 10px;" id="setTempButton">Set Temperature</button>
             <button style="background-color: rgb(147 197 253); padding: 5px 10px;" id="fullscreen-btn">Go Fullscreen</button>
+            <button style="background-color: rgb(165 180 252); padding: 5px 10px;" id="openModalBtn">Panduan</button>
+        </div>
+
+        <!-- Modal -->
+        <div id="myModal" class="modal">
+
+        <!-- Konten modal -->
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <iframe id="pdfViewer" src="/New-SOP Penggunaan ScreenDisplay - RealTime Sensor Data.pdf" type="application/pdf"></iframe>
+        </div>
+
         </div>
         <div class="grid md:grid-cols-2 md:grid-rows-3 gap-5 grid-cols-1 grid-rows-6 py-5">
             <div class="md:p-6 p-3 rounded-[20px] shadow-lg shadow-sky-300/50 bg-white">
@@ -263,6 +320,34 @@
                 let averageFar = (latestData.sensor1.farenheit + latestData.sensor2.farenheit + latestData.sensor3.farenheit + latestData.sensor4.farenheit + latestData.sensor5.farenheit + latestData.sensor6.farenheit)/6
                 document.getElementById('average').textContent =
                         `Average: ${averageCel.toFixed(2)}°C / ${averageFar.toFixed(2)}°F`;
+            }
+        }
+
+        //modal 
+        // Ambil elemen modal
+        var modal = document.getElementById("myModal");
+
+        // Ambil elemen tombol yang membuka modal
+        var btn = document.getElementById("openModalBtn");
+
+        // Ambil elemen <span> yang menutup modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // Ketika tombol diklik, buka modal dan tampilkan PDF
+        btn.onclick = function() {
+            modal.style.display = "block";
+            // document.getElementById("pdfViewer").src = "../SOP Penggunaan ScreenDisplay - RealTime Sensor Data.pdf"; // Ganti dengan path file PDF Anda
+        }
+
+        // Ketika pengguna mengklik <span> (x), tutup modal
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+
+        // Ketika pengguna mengklik di luar modal, tutup modal
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
             }
         }
     </script>
